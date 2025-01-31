@@ -1,6 +1,7 @@
 !!python/object:options.Options
 image_encoder_name: efficientnet
 matching_encoder_type: unet
+# matching_encoder_type: resnet
 feature_volume_type: ms_cost_volume
 dot_dim: 1
 cv_encoder_type: multi_scale_encoder

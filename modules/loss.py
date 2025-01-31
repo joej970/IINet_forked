@@ -241,7 +241,7 @@ class Criterion(nn.Module):
 
         if not uncer_only:
             loss['l1'] = self.cal_l1_loss(inputs, outputs, validmask_pyr)
-            loss['grad'] = self.cal_msgrad_loss(inputs, outputs, validmask_pyr)
+            loss['grad'] = self.cal_msgrad_loss(inputs, outputs, validmask_pyr) # uses kornia
             loss['normal'] = self.cal_normal_loss(inputs, outputs, validmask_pyr[0])
             loss['focal'] = torch.tensor(0., device=validmask_pyr[0].device)
         else:

@@ -1,5 +1,5 @@
 !!python/object:options.Options
-dataset_path: /root/autodl-tmp/sceneflow
+dataset_path: ../IGEV_forked/IGEV-Stereo/data/sceneflow
 dataset: sceneflow
 train_width: 512
 train_height: 384

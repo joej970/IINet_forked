@@ -21,6 +21,7 @@ if __name__ == '__main__':
     opts = option_handler.options
 
     device = torch.device('cuda:0')
+    # device = torch.device('cpu')
 
     left = torch.randn((1, 3, height, width), device=device)
     right = torch.randn((1, 3, height, width), device=device)
@@ -33,10 +34,10 @@ if __name__ == '__main__':
     model = DispModel(opts).to(device)
     model.eval()
 
-    #from thop import profile
-    #Flops, params = profile(model, inputs=(inputs, False)) # macs
-    #print('Flops: % .4fG'%(Flops / 1000000000))
-    #print('params参数量: % .4fM'% (params / 1000000))
+    from thop import profile as thop_profile
+    Flops, params = thop_profile(model, inputs=(inputs, False)) # macs
+    print('Flops: % .4fT'%(Flops / 1e12))
+    print('params参数量: % .4fM'% (params / 1000000))
     
     #from pynvml import *
     #nvmlInit()

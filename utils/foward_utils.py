@@ -60,26 +60,35 @@ def forward_pass(model, data, device, criterion, val=False, uncer_only=False):
     # forward pass
     outputs = model(inputs, uncer_only)
 
+    scalar_outputs = {'bad1': 0.0,
+                        'bad2': 0.0,
+                        'px_error': 0.0,
+                        'epe':0.0,
+                        'd1':0.0,
+                    }
+    
+    return None, scalar_outputs, outputs
+    
     # compute loss
-    losses = criterion(inputs,  outputs, uncer_only)
+    # losses = criterion(inputs,  outputs, uncer_only)
 
-    if not val:
-        scalar_outputs = {'LRl1': losses['l1'][-1],
-                          'HRl1': losses['l1'][0],
-                          'grad': losses['grad'][0],
-                          'normal': losses['normal'],
-                          'focal': losses['focal'],
-                          'epe': losses['epe'],
-                          'd1': losses['d1'],
-                          'px_error': losses['bad3']
-                          }
-    else:
-        scalar_outputs = {'bad1': losses['bad1'],
-                          'bad2': losses['bad2'],
-                          'px_error': losses['bad3'],
-                          'epe':losses['epe'],
-                          'd1':losses['d1'],
-                        }
+    # if not val:
+    #     scalar_outputs = {'LRl1': losses['l1'][-1],
+    #                       'HRl1': losses['l1'][0],
+    #                       'grad': losses['grad'][0],
+    #                       'normal': losses['normal'],
+    #                       'focal': losses['focal'],
+    #                       'epe': losses['epe'],
+    #                       'd1': losses['d1'],
+    #                       'px_error': losses['bad3']
+    #                       }
+    # else:
+    #     scalar_outputs = {'bad1': losses['bad1'],
+    #                       'bad2': losses['bad2'],
+    #                       'px_error': losses['bad3'],
+    #                       'epe':losses['epe'],
+    #                       'd1':losses['d1'],
+    #                     }
 
     return losses, tensor2float(scalar_outputs), outputs
 
@@ -98,6 +107,7 @@ def train_one_epoch(model: torch.nn.Module,
     pwidgets = [progressbar.Percentage(), " ", progressbar.Counter(format='%(value)02d/%(max_value)d'), " ",
                 progressbar.Bar(), " ",
                 progressbar.Timer(), ",", progressbar.ETA(), ",",
+                progressbar.AdaptiveTransferSpeed(), ",",
                 progressbar.Variable('LRl1', width=1), ",", progressbar.Variable('HRl1', width=1), ",",
                 progressbar.Variable('grad', width=1), ",", progressbar.Variable('normal', width=1), ",",progressbar.Variable('foc', width=1), ",",
                 progressbar.Variable('epe', width=1), ",", progressbar.Variable('pxe', width=1),",", progressbar.Variable('d1', width=1)
@@ -201,27 +211,27 @@ def evaluate(model: torch.nn.Module,
         losses, scalar_outputs, outputs = forward_pass(model, data, device, criterion, val=True, uncer_only=uncer_only)
 
         summary.avgMeter.update(scalar_outputs)
-        if (epoch_idx * len(data_loader) + batch_idx) % (opts.summary_freq_eval) == 0:
+        # if (epoch_idx * len(data_loader) + batch_idx) % (opts.summary_freq_eval) == 0:
 
-            image_outputs = gen_log_image(data, outputs, uncer_only)
-            save_scalars(summary.writer, 'val', scalar_outputs, global_step + batch_idx)
-            save_images(summary.writer, 'val', image_outputs, global_step + batch_idx)
+        #     image_outputs = gen_log_image(data, outputs, uncer_only)
+        #     save_scalars(summary.writer, 'val', scalar_outputs, global_step + batch_idx)
+        #     save_images(summary.writer, 'val', image_outputs, global_step + batch_idx)
 
 
-            if opts.save_eval:
-                save_path = os.path.join(summary.directory, 'eval_pics')
-                os.makedirs(save_path, exist_ok=True)
-                #fn = (data['left_filename'][0].split('/')[-2]+(data['left_filename'][0].split('/')[-1]).split('.')[0])
-                fn = batch_idx
-                plt.imsave(os.path.join(save_path, '%s_dispCoarse.jpg' % fn),
-                           savepreprocess(image_outputs['coarse_disp']) / 255.)
-                plt.imsave(os.path.join(save_path, '%s_dispEst.jpg' % fn), savepreprocess(image_outputs['disp_est']) / 255.)
-                plt.imsave(os.path.join(save_path, '%s_dispGT.jpg' % fn), savepreprocess(image_outputs['disp_gt']) / 255.)
-                plt.imsave(os.path.join(save_path, '%s_conf.png' % fn),savepreprocess(image_outputs['confidence']))
-                cv2.imwrite(os.path.join(save_path, '%s_PXE.png' % fn), (image_outputs['px_error_map'][0] * 255).transpose(1, 2, 0))
-                plt.imsave(os.path.join(save_path, '%s_left.png' % fn), savepreprocess(image_outputs['left_img'], True))
-                plt.imsave(os.path.join(save_path, '%s_right.png' % fn), savepreprocess(image_outputs['right_img'], True))
-            del image_outputs
+        #     if opts.save_eval:
+        #         save_path = os.path.join(summary.directory, 'eval_pics')
+        #         os.makedirs(save_path, exist_ok=True)
+        #         #fn = (data['left_filename'][0].split('/')[-2]+(data['left_filename'][0].split('/')[-1]).split('.')[0])
+        #         fn = batch_idx
+        #         plt.imsave(os.path.join(save_path, '%s_dispCoarse.jpg' % fn),
+        #                    savepreprocess(image_outputs['coarse_disp']) / 255.)
+        #         plt.imsave(os.path.join(save_path, '%s_dispEst.jpg' % fn), savepreprocess(image_outputs['disp_est']) / 255.)
+        #         plt.imsave(os.path.join(save_path, '%s_dispGT.jpg' % fn), savepreprocess(image_outputs['disp_gt']) / 255.)
+        #         plt.imsave(os.path.join(save_path, '%s_conf.png' % fn),savepreprocess(image_outputs['confidence']))
+        #         cv2.imwrite(os.path.join(save_path, '%s_PXE.png' % fn), (image_outputs['px_error_map'][0] * 255).transpose(1, 2, 0))
+        #         plt.imsave(os.path.join(save_path, '%s_left.png' % fn), savepreprocess(image_outputs['left_img'], True))
+        #         plt.imsave(os.path.join(save_path, '%s_right.png' % fn), savepreprocess(image_outputs['right_img'], True))
+        #     del image_outputs
 
         pbar.update(batch_idx,
                     bad1="{:.3f}|{:.3f}".format(scalar_outputs["bad1"],

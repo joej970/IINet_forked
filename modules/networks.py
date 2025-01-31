@@ -240,7 +240,8 @@ class ResnetMatchingEncoder(nn.Module):
                 matching_scale=1,
                 multiscale=1,
                 pretrainedfp=None,
-                antialiased=True,
+                antialiased=False,
+                # antialiased=True, # default
             ):
         super().__init__()
 
@@ -316,7 +317,7 @@ class ResnetMatchingEncoder(nn.Module):
             output.append(self.head1(x))
         else:
             output.append(self.head(x))
-        return output
+        return output, output
 
 
 class UnetMatchingEncoder(nn.Module):
@@ -336,7 +337,7 @@ class UnetMatchingEncoder(nn.Module):
         self.num_ch_up = np.array([16, 24, 40, 112])
         self.multiscale = multiscale
         self.num_ch_out = np.array([16, 16, 16, 16])
-        self.lrcvscale = matching_scale + 1
+        self.lrcvscale = matching_scale + 1 # 2 + 1 = 3
 
         if pretrainedfp:
             config = _cfg(url='', file=pretrainedfp)
@@ -369,11 +370,11 @@ class UnetMatchingEncoder(nn.Module):
 
         self.convs = nn.ModuleDict()
 
-        for i in range(1, 5):
-            num_ch_up = self.num_ch_enc[i]
-            num_ch_left = self.num_ch_enc[i - 1]
-            num_ch_right = self.num_ch_up[i - 1]
-            num_ch_out = self.num_ch_out[i - 1]
+        for i in range(1, 5): # 1, 2, 3, 4
+            num_ch_up = self.num_ch_enc[i] # 24, 40, 112, 160
+            num_ch_left = self.num_ch_enc[i - 1] # 16, 24, 40, 112
+            num_ch_right = self.num_ch_up[i - 1] # 16, 24, 40, 112
+            num_ch_out = self.num_ch_out[i - 1]  # 16, 16, 16, 16
             self.convs[f'in_conv{i}'] = nn.Sequential(
                 nn.Conv2d(num_ch_left + num_ch_right,  num_ch_right, kernel_size=3, padding=1),
                 nn.BatchNorm2d(num_ch_right),
@@ -390,7 +391,7 @@ class UnetMatchingEncoder(nn.Module):
         del model
 
     def forward(self, x):
-        output = [None] * (self.multiscale + 1)
+        output = [None] * (self.multiscale + 1) # [None]*3
         enc_output = [None] * 5
         feat_output = [None] * 5
         x = self.stage1(self.stage0(x))
@@ -408,11 +409,11 @@ class UnetMatchingEncoder(nn.Module):
         x = self.stage5(x)
         enc_output[4] = x
         feat_output[4] = x
-        for i in range(4, 0, -1):
+        for i in range(4, 0, -1): # 4, 3, 2, 1
             x_right = enc_output[i - 1]
             x_diag = self.convs[f'up_conv{i + 1}'](enc_output[i])
             x_up = self.convs[f'in_conv{i}'](torch.cat([x_right, x_diag], dim=1))
-            feat_output[i - 1] = x_up
-            if self.lrcvscale - self.multiscale <= i <= self.lrcvscale:
-                output[i - self.lrcvscale + self.multiscale] = self.convs[f'out_conv{i}'](x_up)
+            feat_output[i - 1] = x_up # 3, 2, 1, 0
+            if self.lrcvscale - self.multiscale <= i <= self.lrcvscale: # 1 <= i <= 3; true for i = 1,2,3
+                output[i - self.lrcvscale + self.multiscale] = self.convs[f'out_conv{i}'](x_up) # i - 3 + 2 = i - 1
         return output, feat_output

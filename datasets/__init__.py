@@ -25,8 +25,8 @@ def build_data_loader(opts):
 
     if opts.dataset == 'sceneflow':
         dataset_train = SceneFlowDataset(dataset_dir, "filenames/sceneflow_train.txt", opts.train_height, opts.train_width, training=True)
-        dataset_validation = SceneFlowDataset(dataset_dir, "filenames/sceneflow_test.txt", opts.val_height, opts.val_width, training=False)
-        dataset_test = SceneFlowDataset(dataset_dir, "filenames/sceneflow_test.txt", opts.val_height, opts.val_width, training=False)
+        dataset_validation = SceneFlowDataset(dataset_dir, "filenames/sceneflow_test_zan.txt", opts.val_height, opts.val_width, training=False)
+        dataset_test = SceneFlowDataset(dataset_dir, "filenames/sceneflow_test_zan.txt", opts.val_height, opts.val_width, training=False)
     elif opts.dataset == 'kitti':
         dataset_train = KITTIDataset(dataset_dir, './filenames/kitti12_15_all.txt', opts.train_height,opts.train_width, mode='train')
         dataset_validation = KITTIDataset(dataset_dir, './filenames/kitti15_val3.txt', opts.val_height,
