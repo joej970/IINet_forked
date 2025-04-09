@@ -209,18 +209,18 @@ class SceneFlowDataset(data.Dataset):
         right_img = self._load_image(os.path.join(self.datadir, self.right_filenames[index]))
         left_disp = self._load_disp(os.path.join(self.datadir, self.disp_filenames[index]))
 
-        if self.training:
-            right_disp = self._load_disp(os.path.join(self.datadir, self.disp_filenames[index].replace('left', 'right')))
+        # if self.training:
+        #     right_disp = self._load_disp(os.path.join(self.datadir, self.disp_filenames[index].replace('left', 'right')))
 
-            if self.rng.binomial(1, 0.5):
-                left_img, right_img = np.fliplr(right_img), np.fliplr(left_img)
-                left_disp, right_disp = np.fliplr(right_disp), np.fliplr(left_disp)
-                left_disp[left_disp == np.inf] = 0
+        #     if self.rng.binomial(1, 0.5):
+        #         left_img, right_img = np.fliplr(right_img), np.fliplr(left_img)
+        #         left_disp, right_disp = np.fliplr(right_disp), np.fliplr(left_disp)
+        #         left_disp[left_disp == np.inf] = 0
 
-            if self.rng.binomial(1, 0.2):
-                left_img, right_img, left_disp = self.augmentor(
-                    left_img, right_img, left_disp
-                )
+        #     if self.rng.binomial(1, 0.2):
+        #         left_img, right_img, left_disp = self.augmentor(
+        #             left_img, right_img, left_disp
+        #         )
 
 
         result['left'] = np.ascontiguousarray(left_img)
