@@ -1,0 +1,7 @@
+sceneflow/
+log/
+datasets/__pycache__/
+modules/
+utils/__pycache__/
+*.pyc
+.vscode/

@@ -128,18 +128,32 @@ def train(opts):
 
     return
 
+# python train.py --config_file configs/models/dot_model.yaml --data_config configs/data/sceneflow.yaml --expname sceneflow --summary_freq 500 --dataset_path "D:/OneDrive/OneDrive - Univerza v Ljubljani/datasets/sceneflow/driving_finalpass"
 
 if __name__ == '__main__':
+
+    # import sys
+    # # Manually supply arguments for debugging
+    # sys.argv = [
+    #     'train.py',  # Script name
+    #     '--config_file', 'configs/models/dot_model.yaml',
+    #     '--data_config', 'configs/data/sceneflow.yaml',
+    #     '--expname', 'sceneflow',
+    #     '--summary_freq', '500'
+    # ]
+
     # get an instance of options and load it with config file(s) and cli args.
     option_handler = options.OptionsHandler()
     option_handler.parse_and_merge_options()
     option_handler.pretty_print_options()
     print("\n")
     opts = option_handler.options
+    print(opts.dataset_path)
 
     # if no GPUs are available for us then, use the 32 bit on CPU
     if opts.gpus == 0:
         print("Setting precision to 32 bits since --gpus is set to 0.")
         opts.precision = 32
 
+    quit()
     train(opts)

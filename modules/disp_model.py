@@ -35,7 +35,7 @@ class DispModel(nn.Module):
             )
 
             dec_num_input_ch = (self.num_ch_enc[:self.run_opts.matching_scale - self.run_opts.multiscale]
-                                + self.cost_volume_net.num_ch_enc)
+                                + self.cost_volume_net.num_ch_enc) # 24, 64, 128, 196, 256
         else:
             raise ValueError("Unrecognized option for cost volume encoder type!")
 

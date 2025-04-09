@@ -77,10 +77,10 @@ class DepthDecoderMSR(nn.Module):
         self.num_output_channels = num_output_channels
         self.use_skips = use_skips
         self.scales = scales
-        self.start_scale = lrcv_scale
+        self.start_scale = lrcv_scale # 3
         self.multiscale = multiscale
 
-        self.num_ch_enc = num_ch_enc
+        self.num_ch_enc = num_ch_enc # 24, 64, 128, 196, 256
         self.num_ch_dec = np.array([32, 64, 128, 256])
         self.num_ch_hdim = np.array([32, 64, 128, 256])
 
@@ -89,28 +89,28 @@ class DepthDecoderMSR(nn.Module):
         self.refinenets = nn.ModuleDict()
         # i is encoder depth (top to bottom)
         # j is decoder depth (left to right)
-        for j in range(1, 2):
-            max_i = 5 - j
-            for i in range(max_i, 0, -1):
+        for j in range(1, 2): # 1
+            max_i = 5 - j # 4
+            for i in range(max_i, 0, -1): # 4, 3, 2, 1
 
-                num_ch_out = self.num_ch_dec[i - 1]
+                num_ch_out = self.num_ch_dec[i - 1] # 256, 128, 64, 32
                 total_num_ch_in = 0
 
-                num_ch_in = self.num_ch_enc[i - 1] if j == 1 else self.num_ch_dec[i - 1]
+                num_ch_in = self.num_ch_enc[i - 1] if j == 1 else self.num_ch_dec[i - 1] # 196, 128, 64, 24
                 self.convs[f"right_conv_{i}{j - 1}"] = BasicBlock(num_ch_in,
                                                                     num_ch_out)
-                total_num_ch_in += num_ch_out
+                total_num_ch_in += num_ch_out # 256, 128, 64, 32
 
-                num_ch_in = self.num_ch_dec[i] if i != 4 else self.num_ch_enc[i]
+                num_ch_in = self.num_ch_dec[i] if i != 4 else self.num_ch_enc[i] # 256, 256, 128, 64
                 self.convs[f"up_conv_{i + 1}{j - 1}"] = BasicBlock(num_ch_in,
-                                                                    num_ch_out)
-                total_num_ch_in += num_ch_out
+                                                                    num_ch_out) # 256, 128, 64, 32
+                total_num_ch_in += num_ch_out # 512, 256, 128, 64
 
                 self.convs[f"in_conv_{i}{j}"] = multiple_basic_block(
-                                                            total_num_ch_in,
-                                                            num_ch_out,
+                                                            total_num_ch_in, #512, 256, 128, 64
+                                                            num_ch_out, # 256, 128, 64, 32
                                                         )
-                if 0 < i < self.scales:
+                if 0 < i < self.scales: # 1, 2, 3
                     self.refinenets[f"output_{i}"] = RaftUpSampler(fdim=num_ch_out,
                                                                    hdim=self.num_ch_hdim[i - 1],
                                                                    priordim=1)
@@ -120,16 +120,16 @@ class DepthDecoderMSR(nn.Module):
         depth_outputs = {}
         prev_dnc = {'disp': priority['cdisp'],
                     'conf': priority['cconf']}
-        stage = len(priority['cdisp']) - 1
+        stage = len(priority['cdisp']) - 1 # 2
         up_disp = None
-        for j in range(1, 2):
+        for j in range(1, 2): # 1
             max_i = 5 - j
             upfeats = []
-            for i in range(max_i, 0, -1):
+            for i in range(max_i, 0, -1): # 4, 3, 2, 1
 
-                inputs = [self.convs[f"right_conv_{i}{j - 1}"](prev_outputs[i - 1])]
+                inputs = [self.convs[f"right_conv_{i}{j - 1}"](prev_outputs[i - 1])] # 3, 2, 1, 0
 
-                if i == max_i:
+                if i == max_i: # 4
                     inputs += [upsample(self.convs[f"up_conv_{i + 1}{j - 1}"](prev_outputs[i]))]
                 else:
                     inputs += [upsample(self.convs[f"up_conv_{i + 1}{j - 1}"](upfeats[-1]))]
@@ -137,11 +137,11 @@ class DepthDecoderMSR(nn.Module):
                 upfeat = self.convs[f"in_conv_{i}{j}"](torch.cat(inputs, dim=1))
                 upfeats += [upfeat]
 
-                if 0 < i < self.scales:
-                    if i == self.start_scale:
+                if 0 < i < self.scales: # 3, 2, 1
+                    if i == self.start_scale: # 3
                         displ, up_disp = self.refinenets[f"output_{i}"](
                            torch.cat([upfeat, prev_dnc['disp'][stage]], dim=1),prev_dnc['disp'][stage])
-                        stage -= 1
+                        stage -= 1 # 2, 1, 0
                     else:
                         displ, up_disp = self.refinenets[f"output_{i}"](
                            torch.cat([upfeat, up_disp], dim=1), up_disp)
@@ -170,38 +170,38 @@ class CVEncoder(nn.Module):
         num_ch_cvs = [4, 6, num_ch_cv]
         num_ch_cvs = num_ch_cvs[start_level:]
 
-        for i in range(self.num_blocks):
-            num_ch_in = num_ch_subouts[i - 1]
-            num_ch_out = num_ch_subouts[i]
+        for i in range(self.num_blocks):      #   0,  1,   2,   3,   4
+            num_ch_in = num_ch_subouts[i - 1] # 256, 24,  64, 128, 196
+            num_ch_out = num_ch_subouts[i]    #  24, 64, 128, 196, 256
             if i == 0:
-                num_ch_fuse = num_ch_cvs[i] + num_ch_subencs[i]
-            elif i < multi_scale + 1:
-                self.convs[f"ds_conv_{i}"] = BasicBlock(num_ch_in, num_ch_out, stride=2)
-                num_ch_fuse = num_ch_cvs[i] + num_ch_out + num_ch_subencs[i]
-            else:
-                self.convs[f"ds_conv_{i}"] = BasicBlock(num_ch_in, num_ch_out, stride=2)
-                num_ch_fuse = num_ch_out + num_ch_subencs[i]
+                num_ch_fuse = num_ch_cvs[i] + num_ch_subencs[i] # 4 + 16 = 20
+            elif i < multi_scale + 1: # 1, 2
+                self.convs[f"ds_conv_{i}"] = BasicBlock(num_ch_in, num_ch_out, stride=2) # in_ch = 24, 64, out = 64, 128
+                num_ch_fuse = num_ch_cvs[i] + num_ch_out + num_ch_subencs[i] # 6 + 64 + 24 = 94, 64 + 128 + 40 = 232
+            else: # 3, 4
+                self.convs[f"ds_conv_{i}"] = BasicBlock(num_ch_in, num_ch_out, stride=2) # in_ch = 128, 196, out = 196, 256
+                num_ch_fuse = num_ch_out + num_ch_subencs[i] # 196 + 112 = 308, 256 + 160 = 416
             self.convs[f"conv_{i}"] = nn.Sequential(
-                BasicBlock(num_ch_fuse, num_ch_out, stride=1),
-                BasicBlock(num_ch_out, num_ch_out, stride=1),
+                BasicBlock(num_ch_fuse, num_ch_out, stride=1), #in_ch = 20, 94, 232, 308, 416
+                BasicBlock(num_ch_out, num_ch_out, stride=1), # num_ch_out = 24, 64, 128, 196, 256
             )
-            self.num_ch_enc.append(num_ch_out)
+            self.num_ch_enc.append(num_ch_out) # 24, 64, 128, 196, 256
 
     def forward(self, cost_list, img_feats):
-        num_stage = len(cost_list)
+        num_stage = len(cost_list) # 3
 
         outputs = [None] * self.num_blocks
         cost = cost_list[0]
         x = torch.cat([cost, img_feats[0]], dim=1)
         x = self.convs[f"conv_{0}"](x)
         outputs[0] = x
-        for i in range(1, self.num_blocks):
+        for i in range(1, self.num_blocks): # 1, 2, 3, 4
             x = self.convs[f"ds_conv_{i}"](x)
-            if i < num_stage:
+            if i < num_stage: # 1, 2
                 cost = cost_list[i]
                 x = torch.cat([cost, x, img_feats[i]], dim=1)
                 x = self.convs[f"conv_{i}"](x)
-            else:
+            else: # 3,4
                 x = torch.cat([x, img_feats[i]], dim=1)
                 x = self.convs[f"conv_{i}"](x)
             outputs[i] = x
@@ -212,9 +212,10 @@ class CVEncoder(nn.Module):
 class MLP(nn.Module):
     def __init__(self, channel_list, disable_final_activation=True):
         super(MLP, self).__init__()
-
+        
+        # channel_list = [33, 64, 32, 1]
         layer_list = []
-        for layer_index in list(range(len(channel_list)))[:-1]:
+        for layer_index in list(range(len(channel_list)))[:-1]: # goes through [0, 1, 2]
             layer_list.append(
                             nn.Linear(channel_list[layer_index], 
                                 channel_list[layer_index+1])
@@ -224,7 +225,7 @@ class MLP(nn.Module):
         if disable_final_activation:
             layer_list = layer_list[:-1]
 
-        self.net = nn.Sequential(*layer_list)
+        self.net = nn.Sequential(*layer_list) # channels: 33 -> 64 -> 32
 
     def forward(self, x):
         return self.net(x)
@@ -317,7 +318,8 @@ class ResnetMatchingEncoder(nn.Module):
             output.append(self.head1(x))
         else:
             output.append(self.head(x))
-        return output, output
+        return output
+        # return output, output
 
 
 class UnetMatchingEncoder(nn.Module):

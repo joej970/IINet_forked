@@ -60,35 +60,35 @@ def forward_pass(model, data, device, criterion, val=False, uncer_only=False):
     # forward pass
     outputs = model(inputs, uncer_only)
 
-    scalar_outputs = {'bad1': 0.0,
-                        'bad2': 0.0,
-                        'px_error': 0.0,
-                        'epe':0.0,
-                        'd1':0.0,
-                    }
+    # scalar_outputs = {'bad1': 0.0,
+    #                     'bad2': 0.0,
+    #                     'px_error': 0.0,
+    #                     'epe':0.0,
+    #                     'd1':0.0,
+    #                 }
     
-    return None, scalar_outputs, outputs
+    # return None, scalar_outputs, outputs
     
     # compute loss
-    # losses = criterion(inputs,  outputs, uncer_only)
+    losses = criterion(inputs,  outputs, uncer_only)
 
-    # if not val:
-    #     scalar_outputs = {'LRl1': losses['l1'][-1],
-    #                       'HRl1': losses['l1'][0],
-    #                       'grad': losses['grad'][0],
-    #                       'normal': losses['normal'],
-    #                       'focal': losses['focal'],
-    #                       'epe': losses['epe'],
-    #                       'd1': losses['d1'],
-    #                       'px_error': losses['bad3']
-    #                       }
-    # else:
-    #     scalar_outputs = {'bad1': losses['bad1'],
-    #                       'bad2': losses['bad2'],
-    #                       'px_error': losses['bad3'],
-    #                       'epe':losses['epe'],
-    #                       'd1':losses['d1'],
-    #                     }
+    if not val:
+        scalar_outputs = {'LRl1': losses['l1'][-1],
+                          'HRl1': losses['l1'][0],
+                          'grad': losses['grad'][0],
+                          'normal': losses['normal'],
+                          'focal': losses['focal'],
+                          'epe': losses['epe'],
+                          'd1': losses['d1'],
+                          'px_error': losses['bad3']    
+                          }
+    else:
+        scalar_outputs = {'bad1': losses['bad1'],
+                          'bad2': losses['bad2'],
+                          'px_error': losses['bad3'],
+                          'epe':losses['epe'],
+                          'd1':losses['d1'],
+                        }
 
     return losses, tensor2float(scalar_outputs), outputs
 

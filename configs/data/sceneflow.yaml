@@ -1,5 +1,8 @@
 !!python/object:options.Options
-dataset_path: ../IGEV_forked/IGEV-Stereo/data/sceneflow
+# dataset_path: E:/datasets/sceneflow/driving_finalpass
+# dataset_path: D:/OneDrive/OneDrive - Univerza v Ljubljani/datasets/sceneflow/driving_finalpass
+# dataset_path: ../IGEV_forked/IGEV-Stereo/data/sceneflow
+# instead, supply argument  --dataset_path "D:/OneDrive/OneDrive - Univerza v Ljubljani/datasets/sceneflow/driving_finalpass"
 dataset: sceneflow
 train_width: 512
 train_height: 384
@@ -28,3 +31,7 @@ lr: 0.001
 wd: 0.0
 epochs: 105
 lrepochs: '10,50,70,85,95,100:10,2,2,2,2,2'
+
+
+
+feature_volume_type: ms_cost_volume
