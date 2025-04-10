@@ -155,5 +155,4 @@ if __name__ == '__main__':
         print("Setting precision to 32 bits since --gpus is set to 0.")
         opts.precision = 32
 
-    quit()
     train(opts)
