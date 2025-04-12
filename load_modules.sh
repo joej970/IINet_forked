@@ -1,3 +1,9 @@
+echo "====================="
+echo ""
+echo "Module loading: start"
+echo ""
+echo "====================="
+
 # Start fresh
 module purge
 
@@ -9,7 +15,7 @@ module load Python/3.10.4-GCCcore-11.3.0
 
 # Load PyTorch and CUDA support
 module load PyTorch/1.12.1-foss-2022a-CUDA-11.7.0
-module load torchvision/0.13.1-foss-2022a-CUDA-11.7.0
+module load torchvision/0.13.1-foss-2022a-CUDA-11.7.0 
 
 # Load scientific Python libraries (SciPy, NumPy, etc.)
 module load SciPy-bundle/2022.05-foss-2022a
@@ -27,6 +33,17 @@ pip install --user pypng
 pip install --user timm
 pip install --user antialiased-cnns
 pip install --user kornia
-pip install --user progressbar
+pip install --user progressbar2
+pip install --user --upgrade pillow==9.5
+pip install --user protobuf==3.19.*
 
 
+export PYTHONPATH=$(python -m site --user-site):$PYTHONPATH
+
+python --version
+
+echo "====================="
+echo ""
+echo "Module loading: done"
+echo ""
+echo "====================="
